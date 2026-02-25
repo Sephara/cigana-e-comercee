@@ -54,6 +54,15 @@ export async function GET() {
       manualMonth,
       allOrders,
       allManualSales,
+    ]: [
+      number[],
+      number[],
+      number,
+      number,
+      number,
+      number,
+      { items: unknown }[],
+      { items: unknown }[],
     ] = await Promise.all([
       Promise.all(
         Array.from({ length: 7 }, (_, i) => {
