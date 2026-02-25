@@ -87,7 +87,7 @@ export async function GET() {
       prisma.manualSale.findMany({ select: { items: true } }),
     ])
 
-    const ordersLast7Days = ordersLast7DaysResult.map((c, i) => c + manualLast7DaysResult[i])
+    const ordersLast7Days = ordersLast7DaysResult.map((c: number, i: number) => c + manualLast7DaysResult[i])
     const salesThisWeek = ordersWeek + manualWeek
     const salesThisMonth = ordersMonth + manualMonth
 
