@@ -7,6 +7,12 @@ const nextConfig = {
     ],
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      // Imagens em /uploads/ (antigas no banco) servidas pela mesma API
+      { source: '/uploads/:path*', destination: '/api/uploads/:path*' },
+    ]
+  },
 }
 
 module.exports = nextConfig

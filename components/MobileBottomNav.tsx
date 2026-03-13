@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCart } from '@/lib/cart'
@@ -8,18 +10,24 @@ import { Home, Package, ShoppingCart } from 'lucide-react'
 export default function MobileBottomNav() {
   const pathname = usePathname()
   const { itemCount } = useCart()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   if (pathname.startsWith('/admin')) return null
 
   const isActive = (path: string) => pathname === path
 
-  return (
+  const nav = (
     <nav
-      className="md:hidden fixed left-0 right-0 z-50 bg-black/95 backdrop-blur-sm border-t border-gold-500/20"
+      className="md:hidden left-0 right-0 z-50 bg-black/95 backdrop-blur-sm border-t border-gold-500/20"
       style={{
+        position: 'fixed',
         bottom: 0,
         paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
         paddingTop: 12,
+        transform: 'translateZ(0)',
+        WebkitTransform: 'translateZ(0)',
       }}
     >
       <div className="flex items-center justify-around h-14 px-2">
@@ -60,4 +68,7 @@ export default function MobileBottomNav() {
       </div>
     </nav>
   )
+
+  if (!mounted || typeof document === 'undefined') return null
+  return createPortal(nav, document.body)
 }

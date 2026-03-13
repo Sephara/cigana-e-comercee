@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import InfiniteProductSlider from '@/components/InfiniteProductSlider'
 import BentoGallery from '@/components/BentoGallery'
@@ -14,14 +15,33 @@ export default function Home() {
     getFeaturedProducts,
     getBonesProducts,
     getConjuntosKitProducts,
-    allProducts,
     loading,
   } = useProductsList()
+
+  const [galleryImages, setGalleryImages] = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/gallery', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const urls = data
+            .map((i: { url?: string }) => i.url)
+            .filter((u): u is string => typeof u === 'string' && u.length > 0)
+          setGalleryImages(urls)
+        }
+      })
+      .catch(() => setGalleryImages([]))
+  }, [])
 
   const featuredProducts = getFeaturedProducts()
   const bonesProducts = getBonesProducts()
   const conjuntosKitProducts = getConjuntosKitProducts()
-  const galleryImages = allProducts.slice(0, 8).map((product) => product.image)
+  const hasAnyProducts =
+    featuredProducts.length > 0 ||
+    bonesProducts.length > 0 ||
+    conjuntosKitProducts.length > 0
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -57,59 +77,67 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Bento Gallery Animation */}
+        {/* Galeria — só aparece se houver imagens; atualiza ao mudar no admin */}
         <BentoGallery images={galleryImages} />
 
-        {/* Produtos — listas horizontais com scroll fixo (sem animação) */}
-        <section className="relative">
-          <div className="container mx-auto px-4 py-8 sm:py-10 md:py-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 sm:mb-8 md:mb-12 text-gold-400">
-              Produtos em Destaque
-            </h2>
+        {/* Produtos — só aparece se houver algum produto; seção limpa quando vazio */}
+        {hasAnyProducts && (
+          <section className="relative">
+            <div className="container mx-auto px-4 py-8 sm:py-10 md:py-16">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 sm:mb-8 md:mb-12 text-gold-400">
+                Produtos em Destaque
+              </h2>
 
-            <div className="mb-10 sm:mb-12 md:mb-16">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4 md:mb-6 text-center">
-                Destaques
-              </h3>
-              {loading ? (
-                <p className="text-center text-gray-400 py-6 sm:py-8">Carregando...</p>
-              ) : (
-                <InfiniteProductSlider products={featuredProducts} />
+              {featuredProducts.length > 0 && (
+                <div className="mb-10 sm:mb-12 md:mb-16">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4 md:mb-6 text-center">
+                    Destaques
+                  </h3>
+                  {loading ? (
+                    <p className="text-center text-gray-400 py-6 sm:py-8">Carregando...</p>
+                  ) : (
+                    <InfiniteProductSlider products={featuredProducts} />
+                  )}
+                </div>
               )}
-            </div>
 
-            <div className="mb-10 sm:mb-12 md:mb-16">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4 md:mb-6 text-center">
-                Bonés
-              </h3>
-              {loading ? (
-                <p className="text-center text-gray-400 py-6 sm:py-8">Carregando...</p>
-              ) : (
-                <InfiniteProductSlider products={bonesProducts.slice(0, 6)} maxCards={6} />
+              {bonesProducts.length > 0 && (
+                <div className="mb-10 sm:mb-12 md:mb-16">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4 md:mb-6 text-center">
+                    Bonés
+                  </h3>
+                  {loading ? (
+                    <p className="text-center text-gray-400 py-6 sm:py-8">Carregando...</p>
+                  ) : (
+                    <InfiniteProductSlider products={bonesProducts.slice(0, 6)} maxCards={6} />
+                  )}
+                </div>
               )}
-            </div>
 
-            <div className="mb-10 sm:mb-12 md:mb-16">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4 md:mb-6 text-center">
-                Conjuntos e Kits
-              </h3>
-              {loading ? (
-                <p className="text-center text-gray-400 py-6 sm:py-8">Carregando...</p>
-              ) : (
-                <InfiniteProductSlider products={conjuntosKitProducts} />
+              {conjuntosKitProducts.length > 0 && (
+                <div className="mb-10 sm:mb-12 md:mb-16">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mb-4 md:mb-6 text-center">
+                    Conjuntos e Kits
+                  </h3>
+                  {loading ? (
+                    <p className="text-center text-gray-400 py-6 sm:py-8">Carregando...</p>
+                  ) : (
+                    <InfiniteProductSlider products={conjuntosKitProducts} />
+                  )}
+                </div>
               )}
-            </div>
 
-            <div className="text-center pb-8 sm:pb-10 md:pb-12">
-              <Link
-                href="/produtos"
-                className="inline-block btn-gold-laminated text-black px-6 py-2.5 sm:px-8 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base"
-              >
-                Ver Todos os Produtos
-              </Link>
+              <div className="text-center pb-8 sm:pb-10 md:pb-12">
+                <Link
+                  href="/produtos"
+                  className="inline-block btn-gold-laminated text-black px-6 py-2.5 sm:px-8 sm:py-3 rounded-2xl font-semibold text-sm sm:text-base"
+                >
+                  Ver Todos os Produtos
+                </Link>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* About Section */}
         <section className="bg-black/50 py-10 sm:py-12 md:py-16">

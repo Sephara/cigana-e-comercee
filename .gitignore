@@ -13,6 +13,9 @@
 # production
 /build
 
+# uploads (gerados pelo admin)
+/public/uploads
+
 # misc
 .DS_Store
 *.pem
@@ -34,10 +37,9 @@ yarn-error.log*
 next-env.d.ts
 
 
+# arquivos locais / notas (não versionar)
+*.txt
 cigana.txt
-
-
-
 
 
 /lib/generated/prisma

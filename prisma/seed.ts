@@ -1,14 +1,15 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 import * as bcrypt from 'bcryptjs'
 
 const url = process.env.DATABASE_URL
 if (!url) throw new Error('DATABASE_URL não configurada')
 
-const isAccelerate = url.includes('accelerate') || url.includes('prisma-data-platform')
-const prisma = new PrismaClient(
-  (isAccelerate ? { accelerateUrl: url } : {}) as any
-)
+const pool = new Pool({ connectionString: url })
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 
 const DEFAULT_CATEGORIES = ['geral', 'boné', 'conjunto']
 

@@ -4,8 +4,8 @@ import { useCart } from '@/lib/cart'
 import Header from '@/components/Header'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Minus, Plus, Trash2, ShoppingBag, MessageCircle, Loader2 } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { Minus, Plus, Trash2, ShoppingBag, MessageCircle, Loader2, Truck } from 'lucide-react'
+import { useState, useCallback, useEffect } from 'react'
 import toast from 'react-hot-toast'
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '5511999999999'
@@ -27,6 +27,13 @@ interface ViaCepResponse {
   erro?: boolean
 }
 
+interface FreteOpcao {
+  nome: string
+  valor: number
+  prazo: number
+  dataMaxima: string | null
+}
+
 function CartContent() {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart()
   const [loadingCep, setLoadingCep] = useState(false)
@@ -44,6 +51,9 @@ function CartContent() {
     paymentType: '' as string,
   })
   const [loading, setLoading] = useState(false)
+  const [freteOpcoes, setFreteOpcoes] = useState<FreteOpcao[]>([])
+  const [freteLoading, setFreteLoading] = useState(false)
+  const [freteSelecionado, setFreteSelecionado] = useState<FreteOpcao | null>(null)
 
   const fetchCep = useCallback(async (cep: string) => {
     const digits = cep.replace(/\D/g, '')
@@ -76,6 +86,43 @@ function CartContent() {
     if (digits.length === 8) fetchCep(formData.zipCode)
   }
 
+  useEffect(() => {
+    const cep = formData.zipCode.replace(/\D/g, '')
+    if (cep.length !== 8) {
+      setFreteOpcoes([])
+      setFreteSelecionado(null)
+      return
+    }
+    let cancelled = false
+    setFreteLoading(true)
+    setFreteSelecionado(null)
+    fetch(`/api/frete?cep=${cep}`)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (cancelled) return
+        if (!res.ok || data.error) {
+          const msg = data.error || `Erro ${res.status} ao calcular frete`
+          toast.error(msg)
+          setFreteOpcoes([])
+          return
+        }
+        setFreteOpcoes(data.opcoes || [])
+        if (data.opcoes?.length) {
+          setFreteSelecionado(data.opcoes[0])
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          toast.error(err?.message || 'Erro ao buscar frete.')
+          setFreteOpcoes([])
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setFreteLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [formData.zipCode])
+
   if (cart.length === 0) {
     return (
       <div className="text-center py-12">
@@ -95,6 +142,8 @@ function CartContent() {
       </div>
     )
   }
+
+  const totalComFrete = total + (freteSelecionado?.valor ?? 0)
 
   const buildWhatsAppMessage = () => {
     const fullAddress = [
@@ -124,8 +173,11 @@ function CartContent() {
           `• ${item.name} x ${item.quantity} - R$ ${(item.price * item.quantity).toFixed(2).replace('.', ',')}`
       ),
       '',
-      `*Total: R$ ${total.toFixed(2).replace('.', ',')}*`,
     ]
+    if (freteSelecionado) {
+      lines.push(`*Frete (${freteSelecionado.nome}):* R$ ${freteSelecionado.valor.toFixed(2).replace('.', ',')} - ${freteSelecionado.prazo} dia(s) útil(eis)`, '')
+    }
+    lines.push(`*Total: R$ ${totalComFrete.toFixed(2).replace('.', ',')}*`)
     return lines.join('\n')
   }
 
@@ -144,6 +196,10 @@ function CartContent() {
       !formData.paymentType
     ) {
       toast.error('Preencha todos os dados para continuar.')
+      return
+    }
+    if (formData.zipCode.replace(/\D/g, '').length === 8 && freteOpcoes.length > 0 && !freteSelecionado) {
+      toast.error('Selecione uma opção de frete.')
       return
     }
 
@@ -305,6 +361,61 @@ function CartContent() {
               </div>
               <p className="text-gray-500 text-xs mt-1">Digite o CEP e clique em Buscar para preencher o endereço</p>
             </div>
+
+            {formData.zipCode.replace(/\D/g, '').length === 8 && (
+              <div className="md:col-span-2 mt-2 p-4 rounded-lg bg-gold-500/5 border border-gold-500/20">
+                <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-gold-400" />
+                  Frete (Correios)
+                </h3>
+                {freteLoading ? (
+                  <p className="text-gray-400 flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Calculando...
+                  </p>
+                ) : freteOpcoes.length === 0 ? (
+                  <p className="text-gray-400">Nenhuma opção disponível para este CEP.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {freteOpcoes.map((op) => (
+                      <label
+                        key={op.nome}
+                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                          freteSelecionado?.nome === op.nome
+                            ? 'border-gold-400 bg-gold-400/10'
+                            : 'border-gold-500/20 hover:border-gold-500/40'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="frete"
+                          checked={freteSelecionado?.nome === op.nome}
+                          onChange={() => setFreteSelecionado(op)}
+                          className="sr-only"
+                        />
+                        <span className="text-white font-medium">{op.nome}</span>
+                        <span className="text-gold-400">
+                          R$ {op.valor.toFixed(2).replace('.', ',')} — {op.prazo} dia(s) útil(eis)
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-gray-500 text-xs mt-2">
+                  Cálculo de frete pelos{' '}
+                  <a
+                    href="https://www.correios.com.br"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gold-400 hover:underline"
+                  >
+                    Correios
+                  </a>
+                  .
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="block text-gray-300 mb-2">Endereço (rua, avenida)</label>
               <input
@@ -406,11 +517,23 @@ function CartContent() {
         </div>
 
         <div className="bg-black border border-gold-500/20 rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-white text-xl font-semibold">Total:</span>
-            <span className="text-gold-400 text-3xl font-bold">
-              R$ {total.toFixed(2).replace('.', ',')}
-            </span>
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-gray-300">
+              <span>Subtotal:</span>
+              <span>R$ {total.toFixed(2).replace('.', ',')}</span>
+            </div>
+            {freteSelecionado && (
+              <div className="flex justify-between text-gray-300">
+                <span>Frete ({freteSelecionado.nome}):</span>
+                <span>R$ {freteSelecionado.valor.toFixed(2).replace('.', ',')}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-2 border-t border-gold-500/20">
+              <span className="text-white text-xl font-semibold">Total:</span>
+              <span className="text-gold-400 text-3xl font-bold">
+                R$ {totalComFrete.toFixed(2).replace('.', ',')}
+              </span>
+            </div>
           </div>
           <button
             type="submit"

@@ -1,0 +1,24 @@
+{
+  "name": "Cigana Admin",
+  "short_name": "Cigana Admin",
+  "description": "Painel administrativo Cigana Luxury Style",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#B8941E",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/LOGO ( CIGANA LUXURY STYLE ).png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/LOGO ( CIGANA LUXURY STYLE ).png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import {
   X,
   Image as ImageIcon,
 } from 'lucide-react'
+import { ImageUpload } from '@/components/admin/ImageUpload'
 
 const SECONDARY_IMAGES_COUNT = 3
 
@@ -70,7 +71,17 @@ export default function AdminProdutosPage() {
   const imagesArray = formData.images
     ? formData.images.split(',').map((s) => s.trim()).filter(Boolean)
     : []
-  const hasValidImages = imagesArray.length === SECONDARY_IMAGES_COUNT
+  const secondaryImages = [
+    imagesArray[0] ?? '',
+    imagesArray[1] ?? '',
+    imagesArray[2] ?? '',
+  ]
+  const setSecondaryImage = (index: number, url: string) => {
+    const next = [...secondaryImages]
+    next[index] = url
+    setFormData({ ...formData, images: next.join(', ') })
+  }
+  const hasValidImages = secondaryImages.every((u) => u.trim() !== '')
   const isFormComplete =
     formData.name.trim() !== '' &&
     formData.price.trim() !== '' &&
@@ -109,7 +120,7 @@ export default function AdminProdutosPage() {
     const originalPrice = formData.originalPrice
       ? parseFloat(formData.originalPrice.replace(',', '.'))
       : undefined
-    const images = imagesArray
+    const images = secondaryImages.filter((u) => u.trim())
 
     const product = {
       name: formData.name.trim(),
@@ -160,7 +171,7 @@ export default function AdminProdutosPage() {
             resetForm()
             setShowForm(true)
           }}
-          className="btn-gold-laminated text-black px-6 py-2 rounded-xl font-semibold flex items-center gap-2"
+          className="btn-gold-laminated text-black px-6 py-3 min-h-[44px] rounded-xl font-semibold flex items-center gap-2 touch-manipulation cursor-pointer"
         >
           <Plus className="w-5 h-5" />
           Novo Produto
@@ -175,8 +186,9 @@ export default function AdminProdutosPage() {
                 {editingId ? 'Editar Produto' : 'Novo Produto'}
               </h2>
               <button
+                type="button"
                 onClick={resetForm}
-                className="text-gray-400 hover:text-white"
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-white touch-manipulation cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -185,7 +197,7 @@ export default function AdminProdutosPage() {
               Regra: 1 foto principal + exatamente 3 fotos secundárias. Todos os campos são obrigatórios para publicar.
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
                 <label className="block text-gray-300 mb-1">Título *</label>
                 <input
@@ -200,41 +212,30 @@ export default function AdminProdutosPage() {
               </div>
 
               <div>
-                <label className="block text-gray-300 mb-1">
-                  Link da imagem principal * (1 foto)
-                </label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://..."
+                <ImageUpload
+                  label="Imagem principal * (1 foto)"
                   value={formData.image}
-                  onChange={(e) =>
-                    setFormData({ ...formData, image: e.target.value })
-                  }
-                  className="w-full bg-black border border-gold-500/20 rounded-lg px-4 py-2 text-white"
+                  onChange={(url) => setFormData({ ...formData, image: url })}
+                  placeholder="Enviar foto principal"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-300 mb-1">
-                  Links das 3 imagens secundárias * (exatamente 3, separadas por vírgula)
+                <label className="block text-gray-300 mb-2">
+                  Imagens secundárias * (exatamente 3 fotos)
                 </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="url1, url2, url3"
-                  value={formData.images}
-                  onChange={(e) =>
-                    setFormData({ ...formData, images: e.target.value })
-                  }
-                  className={`w-full bg-black border rounded-lg px-4 py-2 text-white ${
-                    formData.images && !hasValidImages
-                      ? 'border-amber-500/50'
-                      : 'border-gold-500/20'
-                  }`}
-                />
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <ImageUpload
+                      key={i}
+                      value={secondaryImages[i]}
+                      onChange={(url) => setSecondaryImage(i, url)}
+                      placeholder={`Foto ${i + 1}`}
+                    />
+                  ))}
+                </div>
                 <p className="text-gray-500 text-xs mt-1">
-                  {imagesArray.length}/3 imagens. Obrigatório ter exatamente 3.
+                  {secondaryImages.filter((u) => u.trim()).length}/3 imagens. Obrigatório ter exatamente 3.
                 </p>
               </div>
 
@@ -398,7 +399,7 @@ export default function AdminProdutosPage() {
           <p className="text-gray-400 mb-4">Nenhum produto cadastrado</p>
           <button
             onClick={() => setShowForm(true)}
-            className="btn-gold-laminated text-black px-6 py-2 rounded-xl"
+            className="btn-gold-laminated text-black px-6 py-3 min-h-[44px] rounded-xl touch-manipulation cursor-pointer"
           >
             Adicionar primeiro produto
           </button>
@@ -408,9 +409,9 @@ export default function AdminProdutosPage() {
           {products.map((p) => (
             <div
               key={p.id}
-              className="flex items-center gap-4 p-4 border border-gold-500/20 rounded-xl bg-black/50"
+              className="flex flex-wrap items-center gap-3 p-4 border border-gold-500/20 rounded-xl bg-black/50"
             >
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
                 {p.image ? (
                   <img
                     src={p.image}
@@ -423,7 +424,7 @@ export default function AdminProdutosPage() {
                   </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex-shrink" style={{ minWidth: '100px' }}>
                 <p className="font-semibold text-white truncate">{p.name}</p>
                 <p className="text-gold-400 font-bold">
                   R$ {p.price.toFixed(2).replace('.', ',')}
@@ -432,31 +433,37 @@ export default function AdminProdutosPage() {
                   Estoque: {(p as { stock?: number }).stock ?? 0}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="w-full flex items-center justify-end gap-1 flex-shrink-0 sm:w-auto sm:flex-none">
+                <span className="text-gray-500 text-xs mr-2 sm:hidden">Ações:</span>
                 <button
                   onClick={() => toggleFeatured(p.id)}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors touch-manipulation cursor-pointer ${
                     p.featured
                       ? 'text-yellow-400 bg-yellow-400/10'
                       : 'text-gray-500 hover:text-yellow-400'
                   }`}
                   title={p.featured ? 'Remover destaque' : 'Destacar'}
+                  aria-label={p.featured ? 'Remover destaque' : 'Destacar'}
                 >
                   {p.featured ? (
                     <Star className="w-5 h-5 fill-current" />
                   ) : (
                     <StarOff className="w-5 h-5" />
-                  )}
+                )}
                 </button>
                 <button
                   onClick={() => fillForm(p)}
-                  className="p-2 text-gray-400 hover:text-gold-400 rounded-lg"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-gold-400 rounded-lg touch-manipulation cursor-pointer"
+                  title="Editar"
+                  aria-label="Editar produto"
                 >
                   <Pencil className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => handleDelete(p.id)}
-                  className="p-2 text-gray-400 hover:text-red-400 rounded-lg"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-gray-400 hover:text-red-400 rounded-lg touch-manipulation cursor-pointer"
+                  title="Excluir"
+                  aria-label="Excluir produto"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>

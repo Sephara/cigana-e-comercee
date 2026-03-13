@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -69,4 +68,13 @@ model ManualSale {
   createdAt DateTime @default(now())
 
   @@map("manual_sales")
+}
+
+model GalleryImage {
+  id        String   @id @default(uuid())
+  url       String
+  sortOrder Int      @default(0) // menor = primeiro
+  createdAt DateTime @default(now())
+
+  @@map("gallery_images")
 }

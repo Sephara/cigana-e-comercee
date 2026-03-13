@@ -23,7 +23,7 @@ export async function getProductsFromApi(): Promise<ProductFromApi[]> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 10000)
   try {
-    const res = await fetch('/api/products', { signal: controller.signal })
+    const res = await fetch('/api/products', { signal: controller.signal, credentials: 'include' })
     clearTimeout(timeout)
     if (!res.ok) throw new Error('Erro ao buscar produtos')
     return res.json()
@@ -40,6 +40,7 @@ export async function addProductApi(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(product),
+    credentials: 'include',
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
@@ -57,6 +58,7 @@ export async function updateProductApi(
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(product),
+    credentials: 'include',
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
@@ -65,7 +67,7 @@ export async function updateProductApi(
 }
 
 export async function deleteProductApi(id: string): Promise<void> {
-  const res = await fetch(`/api/products/${id}`, { method: 'DELETE' })
+  const res = await fetch(`/api/products/${id}`, { method: 'DELETE', credentials: 'include' })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.error || 'Erro ao excluir produto')
@@ -80,6 +82,7 @@ export async function setProductFeaturedApi(
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ featured }),
+    credentials: 'include',
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))

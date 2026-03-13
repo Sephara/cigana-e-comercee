@@ -7,11 +7,11 @@ import { ProductsProvider } from '@/lib/products-context'
 import MobileBottomNav from '@/components/MobileBottomNav'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import RegisterSW from '@/components/RegisterSW'
+import ManifestLink from '@/components/ManifestLink'
 
 export const metadata: Metadata = {
   title: 'Cigana Luxury Style',
   description: 'E-commerce de produtos de luxo',
-  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -43,6 +43,7 @@ export default function RootLayout({
         <AuthProvider>
           <ProductsProvider>
             <CartProvider>
+              <ManifestLink />
               <RegisterSW />
               {children}
               <MobileBottomNav />
